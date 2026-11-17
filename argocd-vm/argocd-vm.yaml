@@ -1,0 +1,35 @@
+apiVersion: vmoperator.vmware.com/v1alpha5
+kind: VirtualMachine
+metadata:
+  name: argocd-vm
+  namespace: kim-argocd-drx5d
+  labels:
+    vm-selector: argocd-vm
+    argocd-vm-lb: vm-lb-selector
+spec:
+  className: best-effort-small
+  # Friendly image name: Ubuntu 26.04 LTS Minimal - Resolute - 26.04.20261021
+  imageName: vmi-8ac1a433e5dd613cf
+  storageClass: vsan-default-storage-policy
+  powerState: PoweredOn
+  network:
+    hostName: argocd-vm
+    domainName: arn.rainpole.io
+    nameservers:
+      - 172.16.10.4
+      - 172.16.10.5
+    searchDomains:
+      - arn.rainpole.io
+  bootstrap:
+    cloudInit:
+      cloudConfig:
+        timezone: Europe\Stockholm
+        defaultUserEnabled: false
+        ssh_pwauth: true
+        users:
+          - name: vmware
+            passwd:
+              name: argocd-vm-bootstrap-secret
+              key: vmware-passwd
+            lock_passwd: false
+            sudo: ALL=(ALL) NOPASSWD:ALL

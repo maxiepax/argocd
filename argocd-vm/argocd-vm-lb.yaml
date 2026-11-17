@@ -1,0 +1,14 @@
+apiVersion: vmoperator.vmware.com/v1alpha5
+kind: VirtualMachineService
+metadata:
+  name: argocd-vm-lb
+  namespace: kim-argocd-drx5d
+spec:
+  selector:
+    argocd-vm-lb: vm-lb-selector
+  type: LoadBalancer
+  ports:
+    - name: ssh
+      protocol: TCP
+      port: 22
+      targetPort: 22
