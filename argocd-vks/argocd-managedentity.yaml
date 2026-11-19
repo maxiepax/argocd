@@ -1,0 +1,104 @@
+---
+# VMware Operator for ArgoCD - ManagedEntity Configuration
+# This manifest registers a VKS cluster to an ArgoCD instance using the ManagedEntity CRD
+# 
+# Part of App of Apps pattern:
+#   - Wave 0: VKS Cluster creation (argocd-vks.yaml)
+#   - Wave 10: Cluster registration to ArgoCD (this file)
+#
+# Prerequisites:
+#   - VMware Operator for ArgoCD 1.2.0+ must be installed
+#   - argocd-k8s-sa ServiceAccount must exist in the namespace
+#   - You must be in the vSphere Namespace (kim-prod-vlryx in this example)
+#
+# To apply this manifest:
+#   kubectl apply -f argocd-managedentity.yaml
+
+---
+# Role for ArgoCD service account to discover and manage the VKS cluster
+# This role grants read-only access to cluster information and configuration
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: argocd-k8s-sa-role
+  namespace: kim-prod-vlryx
+  labels:
+    app: argocd
+    component: cluster-registration
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+    description: "Wave 10: RBAC Role for cluster registration"
+rules:
+  # Read secrets and configmaps for cluster configuration
+  - apiGroups: [""]
+    resources: ["secrets", "configmaps"]
+    verbs: ["get", "list", "watch"]
+  # Read cluster resources (VKS clusters defined with cluster.x-k8s.io API)
+  - apiGroups: ["cluster.x-k8s.io"]
+    resources: ["clusters"]
+    verbs: ["get", "list", "watch"]
+
+---
+# RoleBinding to bind the Role to the argocd-k8s-sa ServiceAccount
+# This ServiceAccount is created by the VMware Operator for ArgoCD
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: argocd-k8s-sa-rolebinding
+  namespace: kim-prod-vlryx
+  labels:
+    app: argocd
+    component: cluster-registration
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+    description: "Wave 10: RBAC RoleBinding for cluster registration"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: argocd-k8s-sa-role
+subjects:
+  - kind: ServiceAccount
+    name: argocd-k8s-sa
+    namespace: kim-prod-vlryx
+
+---
+# ManagedEntity CRD - Registers the VKS cluster with ArgoCD
+# This creates a cluster secret in ArgoCD that enables the VKS cluster as a deployment target
+apiVersion: argocd-service.vsphere.vmware.com/v1alpha1
+kind: ManagedEntity
+metadata:
+  name: argocd-vks-managed
+  namespace: kim-prod-vlryx
+  labels:
+    cluster-name: argocd-vks
+    app: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+    description: "Wave 10: Register VKS cluster to ArgoCD instance"
+spec:
+  # Reference to the target VKS cluster
+  targetRef:
+    apiGroup: cluster.x-k8s.io           # API group for Cluster API (VKS uses this)
+    kind: Cluster                         # Resource kind
+    name: argocd-vks                      # Name of the VKS cluster
+    namespace: kim-prod-vlryx             # vSphere namespace where cluster resides
+  
+  # Display name for the cluster in ArgoCD
+  clusterName: argocd-vks-prod
+  
+  # ArgoCD project to associate this cluster with
+  # Using 'default' allows use with any ArgoCD AppProject
+  argoCDProject: default
+  
+  # Namespaces that ArgoCD can manage on this cluster
+  # Empty array means ArgoCD can manage all namespaces
+  namespaces: []
+  
+  # Custom labels to apply to the generated ArgoCD cluster secret
+  secretLabels:
+    managed-by: argocd-vks
+    cluster-environment: production
+  
+  # Optional: Custom annotations for the generated secret
+  secretAnnotations:
+    description: "VKS cluster registered for App of Apps pattern"

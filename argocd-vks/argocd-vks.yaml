@@ -3,6 +3,9 @@ kind: Cluster
 metadata:
   name: argocd-vks
   namespace: kim-prod-vlryx
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+    description: "VKS Cluster - Wave 0: Initial cluster creation"
 spec:
   clusterNetwork:
     pods:

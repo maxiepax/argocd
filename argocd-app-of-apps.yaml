@@ -1,0 +1,78 @@
+---
+# App of Apps - ArgoCD VKS Cluster Registration
+# 
+# This Application orchestrates the creation and registration of the VKS cluster
+# in a controlled, wave-based manner:
+#
+#   Wave 0: Create the VKS cluster (argocd-vks.yaml)
+#     - Waits for cluster to be in Ready state before proceeding
+#
+#   Wave 10: Register cluster to ArgoCD (argocd-managedentity.yaml)
+#     - Creates RBAC permissions for ArgoCD
+#     - Registers the cluster as a ManagedEntity
+#     - Cluster becomes available as deployment target
+#
+# Apply with: kubectl apply -f argocd-app-of-apps.yaml
+# Monitor with: argocd app get argocd-vks-app-of-apps -w
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd-vks-app-of-apps
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels:
+    app-type: app-of-apps
+    cluster-name: argocd-vks
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/maxiepax/argocd
+    targetRevision: HEAD
+    path: argocd/argocd-vks
+  
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kim-prod-vlryx
+  
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+      - RespectIgnoreDifferences=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+
+---
+# AppProject for VKS cluster registration
+# Isolates the VKS cluster registration resources
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: vks-cluster-registration
+  namespace: argocd
+spec:
+  description: Project for VKS cluster registration and management
+  sourceRepos:
+    - 'https://github.com/maxiepax/argocd'
+  destinations:
+    - namespace: 'kim-prod-vlryx'
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: cluster.x-k8s.io
+      kind: Cluster
+    - group: argocd-service.vsphere.vmware.com
+      kind: ManagedEntity
+  namespaceResourceBlacklist:
+    - group: '*'
+      kind: ResourceQuota
+    - group: '*'
+      kind: LimitRange
