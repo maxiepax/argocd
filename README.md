@@ -18,6 +18,9 @@ The entire process is orchestrated by ArgoCD with sync waves, ensuring the clust
 kubectl apply -f argocd-app-of-apps.yaml
 ```
 
+Alternatively, paste the entire `argocd-app-of-apps.yaml` into the ArgoCD UI's
+Application YAML editor. Commit and push the source manifests before syncing.
+
 ### Monitor progress:
 ```bash
 argocd app watch argocd-vks-app-of-apps
@@ -36,7 +39,8 @@ argocd cluster list  # Should show argocd-vks-prod
 |------|---------|------|
 | `argocd-vks/argocd-vks.yaml` | VKS Cluster definition | 0 |
 | `argocd-vks/argocd-managedentity.yaml` | Cluster registration (Role, RoleBinding, ManagedEntity) | 10 |
-| `argocd-app-of-apps.yaml` | Orchestration Application & AppProject | - |
+| `argocd-app-of-apps.yaml` | Orchestration Application (uses the `default` project) | - |
+| `argocd-vks-appproject.yaml` | Optional separate AppProject | - |
 | **Documentation** | | |
 | `QUICK_START.md` | ⚡ Fastest way to deploy | - |
 | `DEPLOYMENT_GUIDE.md` | 📋 Step-by-step deployment with monitoring | - |
@@ -53,6 +57,7 @@ argocd/
 │   ├── argocd-vks.yaml              Wave 0: Cluster creation
 │   └── argocd-managedentity.yaml    Wave 10: Registration
 ├── argocd-app-of-apps.yaml          Orchestration
+├── argocd-vks-appproject.yaml       Optional AppProject
 ├── README.md                        (This file)
 ├── QUICK_START.md                   Fastest guide
 ├── DEPLOYMENT_GUIDE.md              Step-by-step guide  
@@ -86,7 +91,7 @@ Complete! Cluster available in ArgoCD (15-40 min total)
 ### Option 1: GitOps (Recommended) ⭐
 ```bash
 # Add to your repository
-git add argocd-vks/ argocd-managedentity.yaml argocd-app-of-apps.yaml
+git add argocd-vks/ argocd-app-of-apps.yaml
 git commit -m "Add App of Apps for VKS cluster"
 git push
 
@@ -160,7 +165,10 @@ ArgoCD's sync waves ensure resources are created in order:
 One Application (`argocd-vks-app-of-apps`) manages:
 - VKS Cluster creation
 - Cluster registration resources
-- AppProject for access control
+
+The Application uses the `default` AppProject. The optional
+`argocd-vks-appproject.yaml` must be created separately and selected in
+`spec.project` to use it.
 
 ### ManagedEntity
 VMware Operator CRD that:

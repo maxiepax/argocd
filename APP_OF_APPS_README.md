@@ -43,10 +43,12 @@ argocd-vks-app-of-apps (Main Application)
     - Enables App of Apps pattern on the cluster
 
 ### `argocd-app-of-apps.yaml`
-- **Purpose**: Main orchestration Application and AppProject
-- **Contains**:
-  - `Application`: Syncs both YAML files in correct wave order
-  - `AppProject`: Isolates and controls access to cluster registration resources
+- **Purpose**: Main orchestration Application, syncing both YAML files in wave order
+- **Project**: Uses the existing `default` AppProject
+
+### `argocd-vks-appproject.yaml`
+- **Purpose**: Optional `vks-cluster-registration` AppProject, provided separately
+- The Application does not use this project unless `spec.project` is changed.
 
 ## Prerequisites
 
@@ -71,6 +73,10 @@ kubectl apply -f argocd-managedentity.yaml
 
 ### Option 2: Deploy via ArgoCD (Recommended - Full App of Apps)
 
+To use the ArgoCD UI, create an Application using the YAML editor and paste the
+entire `argocd-app-of-apps.yaml` file. It contains one Application document.
+Commit and push the source manifests before syncing.
+
 ```bash
 # Apply the App of Apps Application
 kubectl apply -f argocd-app-of-apps.yaml
@@ -82,6 +88,10 @@ argocd app wait argocd-vks-app-of-apps --sync
 # Watch real-time progress
 argocd app wait argocd-vks-app-of-apps --sync -v
 ```
+
+The separate `argocd-vks-appproject.yaml` is optional and is not created by
+applying the Application. To use it, create the AppProject separately and set
+the Application's `spec.project` to `vks-cluster-registration`.
 
 ## Wave Execution Timeline
 
@@ -215,7 +225,7 @@ metadata:
 1. **Service Account Permissions**: The Role grants read-only access to cluster resources, appropriate for discovery
 2. **RBAC Isolation**: Resources are namespace-scoped, not cluster-wide
 3. **Secret Management**: ArgoCD-generated cluster secrets are stored in the vSphere namespace
-4. **Project Isolation**: AppProject restricts cluster registration resources to specific API groups
+4. **Project Isolation**: The Application uses the `default` project unless configured to use a separate AppProject
 
 ## References
 

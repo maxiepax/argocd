@@ -19,7 +19,8 @@ argocd/
 │                                          Includes: Role, RoleBinding, ManagedEntity
 │
 ├── argocd-app-of-apps.yaml             ← Orchestration Application
-│                                          Includes: Application, AppProject
+│                                          Uses the default AppProject
+├── argocd-vks-appproject.yaml          ← Optional separate AppProject
 │
 ├── QUICK_START.md                      ← Fast deployment guide
 ├── APP_OF_APPS_README.md               ← Comprehensive documentation
@@ -80,7 +81,7 @@ FILE DESCRIPTIONS
 
 3. argocd-app-of-apps.yaml
    ─────────────────────────────────────────────────────────────────────────
-   - Contains 2 Kubernetes resources:
+   - Contains one Kubernetes resource:
    
    a) Application (argocd-vks-app-of-apps)
       - Kind: argoproj.io/v1alpha1
@@ -93,7 +94,10 @@ FILE DESCRIPTIONS
       - Namespace: argocd
       - Syncs: Both argocd-vks.yaml and argocd-managedentity.yaml in wave order
    
-   b) AppProject (vks-cluster-registration)
+4. argocd-vks-appproject.yaml
+   ─────────────────────────────────────────────────────────────────────────
+   - Optional AppProject (vks-cluster-registration), created separately
+   - The Application uses default unless spec.project is changed
       - Kind: argoproj.io/v1alpha1
       - Purpose: Control access to cluster registration resources
       - Allowed Resources:

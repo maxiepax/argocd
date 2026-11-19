@@ -37,7 +37,7 @@ Your VKS Cluster App of Apps setup is now complete! Here's what you got:
       - Displays as "argocd-vks-prod" in ArgoCD
 
 ✅ argocd-app-of-apps.yaml (New - completely generated)
-   Contains 2 resources:
+   Contains 1 resource:
    
    a) Application: argocd-vks-app-of-apps
       - Orchestrates Wave 0 and Wave 10
@@ -47,7 +47,9 @@ Your VKS Cluster App of Apps setup is now complete! Here's what you got:
       - Retry policy with backoff
       - Namespace: argocd
    
-   b) AppProject: vks-cluster-registration
+✅ argocd-vks-appproject.yaml (Optional - created separately)
+   AppProject: vks-cluster-registration
+      - Not used unless the Application's spec.project is changed
       - Controls access to cluster registration
       - Allows cluster.x-k8s.io/Cluster resources
       - Allows argocd-service.vsphere.vmware.com/ManagedEntity
@@ -224,7 +226,7 @@ Application (Orchestration):
   Namespace: argocd
   Name: argocd-vks-app-of-apps
 
-AppProject (Access Control):
+Optional AppProject (not used by the default Application):
   Namespace: argocd
   Name: vks-cluster-registration
 
@@ -317,7 +319,7 @@ Existing Files (not modified):
 ✅ Wave 0 annotation present in argocd-vks.yaml
 ✅ Wave 10 annotations present in argocd-managedentity.yaml
 ✅ argocd-app-of-apps.yaml references both configurations
-✅ AppProject created with correct permissions
+✅ Optional AppProject defined separately
 ✅ Namespace correctly set to kim-prod-vlryx
 ✅ All manifests are YAML-valid
 

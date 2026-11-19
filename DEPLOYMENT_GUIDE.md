@@ -19,8 +19,10 @@ argocd-managedentity.yaml
 
 argocd-app-of-apps.yaml
 ├─ Orchestration Application
-├─ Syncs both files in wave order
-└─ AppProject for access control
+└─ Syncs both files in wave order using the default project
+
+argocd-vks-appproject.yaml
+└─ Optional separate AppProject
 
 Documentation
 ├─ QUICK_START.md (fastest way to deploy)
@@ -37,7 +39,7 @@ Documentation
 
 ```bash
 # 1. Add files to your Git repository
-git add argocd-vks/ argocd-managedentity.yaml argocd-app-of-apps.yaml
+git add argocd-vks/ argocd-app-of-apps.yaml
 git commit -m "Add App of Apps for VKS cluster registration"
 git push
 
@@ -47,6 +49,10 @@ kubectl apply -f argocd-app-of-apps.yaml
 # 3. Watch progress
 argocd app wait argocd-vks-app-of-apps --sync -v
 ```
+
+Alternatively, paste the entire `argocd-app-of-apps.yaml` into the ArgoCD UI's
+Application YAML editor. The optional AppProject must be created separately and
+selected in the Application's `spec.project` if it is to be used.
 
 ### Option B: Direct kubectl (Quick test)
 **Pros:** Immediate, no Git needed
@@ -123,7 +129,6 @@ Application created: argocd-vks-app-of-apps
 ### T+0-5 seconds: Initial Sync
 ```
 Application status: Syncing
-├─ Creating AppProject
 └─ Starting Wave 0 resources
 ```
 

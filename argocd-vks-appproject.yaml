@@ -1,0 +1,25 @@
+---
+# Optional AppProject for VKS cluster registration.
+# The Application uses the default project unless its spec.project is changed.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: vks-cluster-registration
+  namespace: argocd
+spec:
+  description: Project for VKS cluster registration and management
+  sourceRepos:
+    - 'https://github.com/maxiepax/argocd'
+  destinations:
+    - namespace: 'kim-prod-vlryx'
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: cluster.x-k8s.io
+      kind: Cluster
+    - group: argocd-service.vsphere.vmware.com
+      kind: ManagedEntity
+  namespaceResourceBlacklist:
+    - group: '*'
+      kind: ResourceQuota
+    - group: '*'
+      kind: LimitRange

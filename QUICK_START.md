@@ -7,6 +7,11 @@
 kubectl apply -f argocd-app-of-apps.yaml
 ```
 
+Alternatively, paste the entire `argocd-app-of-apps.yaml` into the ArgoCD UI's
+Application YAML editor. Commit and push the source manifests before syncing.
+The Application uses the `default` project; `argocd-vks-appproject.yaml` is
+optional and must be created and selected separately.
+
 That's it! ArgoCD will now orchestrate:
 
 1. **Wave 0**: Create your VKS cluster
@@ -49,6 +54,7 @@ Expected: `argocd-vks-prod` appears in the list
 | `argocd-vks.yaml` | VKS Cluster definition | 0 |
 | `argocd-managedentity.yaml` | Cluster registration | 10 |
 | `argocd-app-of-apps.yaml` | Orchestration | - |
+| `argocd-vks-appproject.yaml` | Optional separate AppProject | - |
 | `APP_OF_APPS_README.md` | Detailed documentation | - |
 
 ## ⏱️ Expected Timeline

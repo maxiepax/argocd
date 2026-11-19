@@ -31,7 +31,7 @@ spec:
   source:
     repoURL: https://github.com/maxiepax/argocd
     targetRevision: HEAD
-    path: argocd/argocd-vks
+    path: argocd-vks
   
   destination:
     server: https://kubernetes.default.svc
@@ -50,29 +50,3 @@ spec:
         duration: 5s
         factor: 2
         maxDuration: 3m
-
----
-# AppProject for VKS cluster registration
-# Isolates the VKS cluster registration resources
-apiVersion: argoproj.io/v1alpha1
-kind: AppProject
-metadata:
-  name: vks-cluster-registration
-  namespace: argocd
-spec:
-  description: Project for VKS cluster registration and management
-  sourceRepos:
-    - 'https://github.com/maxiepax/argocd'
-  destinations:
-    - namespace: 'kim-prod-vlryx'
-      server: https://kubernetes.default.svc
-  clusterResourceWhitelist:
-    - group: cluster.x-k8s.io
-      kind: Cluster
-    - group: argocd-service.vsphere.vmware.com
-      kind: ManagedEntity
-  namespaceResourceBlacklist:
-    - group: '*'
-      kind: ResourceQuota
-    - group: '*'
-      kind: LimitRange
