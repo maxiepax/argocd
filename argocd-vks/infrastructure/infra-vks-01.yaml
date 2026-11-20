@@ -36,7 +36,7 @@ spec:
       machineDeployments:
         - class: node-pool
           name: infra-vks-01-np-k3sx
-          replicas: 1
+          replicas: 2
           metadata:
             annotations:
               run.tanzu.vmware.com/resolve-os-image: os-name=photon
