@@ -12,7 +12,7 @@
 #   - You must be in the vSphere Namespace (kim-prod-vlryx in this example)
 #
 # To apply this manifest:
-#   kubectl apply -f argocd-vks/argocd-managedentity.yaml
+#   kubectl apply -f argocd-managedentity.yaml
 
 ---
 # Role for ArgoCD service account to discover and manage the VKS cluster

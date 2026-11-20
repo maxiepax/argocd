@@ -10,7 +10,9 @@ spec:
   source:
     repoURL: https://github.com/maxiepax/argocd
     targetRevision: HEAD
-    path: argocd-vks/application/online-boutique
+    path: argocd-vks-microservices-demo/application
+    directory:
+      exclude: '*-app.yaml'
   destination:
     name: infra-vks-01
     namespace: online-boutique

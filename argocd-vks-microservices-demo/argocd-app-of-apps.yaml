@@ -11,7 +11,7 @@
 #     - Registers the cluster as a ManagedEntity
 #     - Creates VKS AddonInstalls for cert-manager, contour, and prometheus
 #     - Cluster becomes available as deployment target
-#   Wave 20: Create the nginx and online-boutique Applications
+#   Wave 20: Create the online-boutique Application
 #
 # Apply with: kubectl apply -n <argocd-namespace> -f argocd-app-of-apps.yaml
 # Monitor with: argocd app get argocd-vks-app-of-apps -w
@@ -30,7 +30,7 @@ spec:
   source:
     repoURL: https://github.com/maxiepax/argocd
     targetRevision: HEAD
-    path: argocd-vks
+    path: argocd-vks-microservices-demo
     directory:
       recurse: true
       include: '{infrastructure/*,argocd-managedentity.yaml,application/*-app.yaml,infra-vks-01.yaml,argocd-vks.yaml,cert-manager-addon.yaml,contour-addon.yaml,prometheus-addon.yaml}'
