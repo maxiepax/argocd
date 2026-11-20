@@ -8,7 +8,7 @@ Your VKS Cluster App of Apps setup is now complete! Here's what you got:
 1. CONFIGURATION FILES (Ready to Deploy)
 ================================================================================
 
-✅ argocd-vks/argocd-vks.yaml (Already existed, now updated with Wave 0 annotation)
+✅ argocd-vks/infra-vks-01.yaml (Already existed, now updated with Wave 0 annotation)
    - VKS Cluster definition
    - Wave 0 annotation: argocd.argoproj.io/sync-wave: "0"
    - 1 control plane replica (best-effort-medium)
@@ -17,7 +17,11 @@ Your VKS Cluster App of Apps setup is now complete! Here's what you got:
    - Pod network: 10.95.0.0/16
    - Service network: 10.96.0.0/12
 
-✅ argocd-managedentity.yaml (New - completely generated)
+✅ argocd-vks/*-addon.yaml
+   - Requests cert-manager, contour, and prometheus for infra-vks-01
+   - See APP_OF_APPS_README.md for add-on setup and verification
+
+✅ argocd-vks/argocd-managedentity.yaml
    Contains 3 resources:
    
    a) Role: argocd-k8s-sa-role
@@ -30,22 +34,22 @@ Your VKS Cluster App of Apps setup is now complete! Here's what you got:
       - Binds role to argocd-k8s-sa service account
       - Namespace: kim-prod-vlryx
    
-   c) ManagedEntity: argocd-vks-managed
+   c) ManagedEntity: infra-vks-01-managed
       - Wave 10 annotation
       - Registers VKS cluster to ArgoCD
       - References cluster from Wave 0
-      - Displays as "argocd-vks-prod" in ArgoCD
+      - Displays as "infra-vks-01" in ArgoCD
 
 ✅ argocd-app-of-apps.yaml (New - completely generated)
    Contains 1 resource:
    
    a) Application: argocd-vks-app-of-apps
       - Orchestrates Wave 0 and Wave 10
-      - Syncs argocd-vks.yaml and argocd-managedentity.yaml
+      - Syncs the cluster, add-ons, and argocd-managedentity.yaml
       - Automated sync policy
       - Self-healing enabled
       - Retry policy with backoff
-      - Namespace: argocd
+      - Namespace: ArgoCD installation namespace (omitted from YAML)
    
 ✅ argocd-vks-appproject.yaml (Optional - created separately)
    AppProject: vks-cluster-registration
@@ -130,7 +134,7 @@ WAVE 0: VKS Cluster Creation
 Duration: 10-30 minutes
 
 What Happens:
-1. Cluster CRD is created from argocd-vks.yaml
+1. Cluster CRD is created from infra-vks-01.yaml
 2. VMware infrastructure provider observes it
 3. VMs are provisioned (1 control plane, 1 worker)
 4. Kubernetes components are installed
@@ -139,7 +143,7 @@ What Happens:
 7. Cluster becomes Ready
 
 Success Indicator:
-   kubectl get cluster argocd-vks -n kim-prod-vlryx
+   kubectl get cluster infra-vks-01 -n kim-prod-vlryx
    Shows: PHASE=Ready
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -151,7 +155,7 @@ Duration: 2-5 minutes (starts automatically after Wave 0 completes)
 What Happens:
 1. RBAC Role is created (argocd-k8s-sa-role)
 2. RoleBinding is created (argocd-k8s-sa-rolebinding)
-3. ManagedEntity is created (argocd-vks-managed)
+3. ManagedEntity is created (infra-vks-01-managed)
 4. VMware Operator validates service account
 5. Operator fetches cluster API endpoint
 6. Operator generates kubeconfig credentials
@@ -159,25 +163,25 @@ What Happens:
 8. ManagedEntity becomes Ready
 
 Success Indicator:
-   kubectl describe managedentity argocd-vks-managed -n kim-prod-vlryx
+   kubectl describe managedentity infra-vks-01-managed -n kim-prod-vlryx
    Shows: Phase=Ready
 
 Verification:
    argocd cluster list
-   Shows: argocd-vks-prod in the list
+   Shows: infra-vks-01 in the list
 
 ================================================================================
 4. KEY IMPROVEMENTS FROM BEFORE
 ================================================================================
 
 BEFORE:
-  - argocd-vks.yaml: Standalone cluster definition
+  - infra-vks-01.yaml: Standalone cluster definition
   - argocd-managedentity.yaml: Standalone registration (created manually)
   - Manual wave coordination required
   - No single point of orchestration
 
 AFTER:
-  ✅ argocd-vks.yaml: Updated with Wave 0 annotation
+  ✅ infra-vks-01.yaml: Updated with Wave 0 annotation
   ✅ argocd-managedentity.yaml: Added Wave 10 annotation
   ✅ argocd-app-of-apps.yaml: Orchestration Application (NEW)
   ✅ Automatic wave sequencing
@@ -212,11 +216,11 @@ All resources created in: kim-prod-vlryx
 
 Cluster (Wave 0):
   Namespace: kim-prod-vlryx
-  Name: argocd-vks
+  Name: infra-vks-01
 
 ManagedEntity (Wave 10):
   Namespace: kim-prod-vlryx
-  Name: argocd-vks-managed
+  Name: infra-vks-01-managed
 
 Role & RoleBinding (Wave 10):
   Namespace: kim-prod-vlryx
@@ -244,14 +248,14 @@ Optional AppProject (not used by the default Application):
    cp argocd-vks/ argocd-managedentity.yaml argocd-app-of-apps.yaml your-repo/argocd/
    cd your-repo
    git add . && git commit -m "Add VKS cluster App of Apps" && git push
-   kubectl apply -f argocd/argocd-app-of-apps.yaml
+   kubectl apply -n argocd -f argocd/argocd-app-of-apps.yaml
 
 ⚡ Option 2: Quick Deployment (Test/Demo)
    - Use without Git
    - Direct kubectl apply
    - Works immediately
    
-   kubectl apply -f argocd-app-of-apps.yaml
+   kubectl apply -n argocd -f argocd-app-of-apps.yaml
 
 🔧 Option 3: Customize First
    - Edit the files for your environment
@@ -259,7 +263,7 @@ Optional AppProject (not used by the default Application):
    - Then deploy
 
    sed -i 's/kim-prod-vlryx/your-namespace/g' *.yaml argocd-vks/*.yaml
-   kubectl apply -f argocd-app-of-apps.yaml
+   kubectl apply -n argocd -f argocd-app-of-apps.yaml
 
 ================================================================================
 8. IMMEDIATE NEXT STEPS
@@ -273,7 +277,7 @@ Optional AppProject (not used by the default Application):
    Customization    → Edit files, then deploy
 
 3. Deploy:
-   kubectl apply -f argocd-app-of-apps.yaml
+   kubectl apply -n argocd -f argocd-app-of-apps.yaml
 
 4. Monitor progress:
    argocd app watch argocd-vks-app-of-apps
@@ -291,7 +295,7 @@ Optional AppProject (not used by the default Application):
 All files are in: /home/kim.johansson@arn.rainpole.io/Documents/argocd/
 
 Configuration Files:
-  - argocd-vks/argocd-vks.yaml
+  - argocd-vks/infra-vks-01.yaml
   - argocd-managedentity.yaml
   - argocd-app-of-apps.yaml
 
@@ -316,7 +320,7 @@ Existing Files (not modified):
 
 ✅ All 3 configuration files exist and are properly formatted
 ✅ All documentation files exist
-✅ Wave 0 annotation present in argocd-vks.yaml
+✅ Wave 0 annotation present in infra-vks-01.yaml
 ✅ Wave 10 annotations present in argocd-managedentity.yaml
 ✅ argocd-app-of-apps.yaml references both configurations
 ✅ Optional AppProject defined separately
@@ -340,7 +344,7 @@ YOU'RE ALL SET! 🎉
 The App of Apps setup is complete and ready to deploy.
 
 👉 READ: README.md (entry point)
-👉 DEPLOY: kubectl apply -f argocd-app-of-apps.yaml
+👉 DEPLOY: kubectl apply -n argocd -f argocd-app-of-apps.yaml
 👉 MONITOR: argocd app watch argocd-vks-app-of-apps
 👉 VERIFY: argocd cluster list (after 15-40 minutes)
 

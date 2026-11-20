@@ -1,8 +1,10 @@
 apiVersion: cluster.x-k8s.io/v1beta2
 kind: Cluster
 metadata:
-  name: argocd-vks
+  name: infra-vks-01
   namespace: kim-prod-vlryx
+  labels:
+    cluster.x-k8s.io/cluster-name: infra-vks-01
   annotations:
     argocd.argoproj.io/sync-wave: "0"
     description: "VKS Cluster - Wave 0: Initial cluster creation"
@@ -33,7 +35,7 @@ spec:
     workers:
       machineDeployments:
         - class: node-pool
-          name: argocd-vks-np-k3sx
+          name: infra-vks-01-np-k3sx
           replicas: 1
           metadata:
             annotations:

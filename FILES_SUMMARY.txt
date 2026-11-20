@@ -8,15 +8,14 @@ PROJECT STRUCTURE
 
 argocd/
 ├── argocd-vks/
-│   └── argocd-vks.yaml                 ← VKS Cluster Definition (Wave 0)
+│   ├── infra-vks-01.yaml                 ← Fixed-size VKS Cluster (Wave 0)
+│   ├── *-addon.yaml                     ← VKS add-ons (Wave 10)
+│   └── argocd-managedentity.yaml         ← RBAC and registration
 │
 ├── argocd-vm/                          ← Existing ArgoCD VM setup
 │   ├── argocd-vm.yaml
 │   ├── argocd-vm-lb.yaml
 │   └── Bootstrap-Secret.yaml
-│
-├── argocd-managedentity.yaml           ← Cluster Registration (Wave 10)
-│                                          Includes: Role, RoleBinding, ManagedEntity
 │
 ├── argocd-app-of-apps.yaml             ← Orchestration Application
 │                                          Uses the default AppProject
@@ -31,7 +30,7 @@ argocd/
 FILE DESCRIPTIONS
 ================================================================================
 
-1. argocd-vks/argocd-vks.yaml
+1. argocd-vks/infra-vks-01.yaml
    ─────────────────────────────────────────────────────────────────────────
    - Kind: Cluster (cluster.x-k8s.io/v1beta2)
    - Wave: 0 (Initial resource creation)
@@ -47,7 +46,7 @@ FILE DESCRIPTIONS
    - Typical Duration: 10-30 minutes
    - Annotation: argocd.argoproj.io/sync-wave: "0"
 
-2. argocd-managedentity.yaml
+2. argocd-vks/argocd-managedentity.yaml
    ─────────────────────────────────────────────────────────────────────────
    - Contains 3 Kubernetes resources:
    
@@ -66,13 +65,13 @@ FILE DESCRIPTIONS
       - Binds: argocd-k8s-sa → argocd-k8s-sa-role
       - Namespace: kim-prod-vlryx
    
-   c) ManagedEntity (argocd-vks-managed)
+   c) ManagedEntity (infra-vks-01-managed)
       - Wave: 10
       - Kind: ManagedEntity (argocd-service.vsphere.vmware.com/v1alpha1)
       - Purpose: Register VKS cluster from Wave 0 to ArgoCD
       - Spec:
-        * targetRef: Cluster argocd-vks (references Wave 0 cluster)
-        * clusterName: argocd-vks-prod (display name in ArgoCD)
+        * targetRef: Cluster infra-vks-01 (references Wave 0 cluster)
+        * clusterName: infra-vks-01 (display name in ArgoCD)
         * argoCDProject: default
         * namespaces: [] (all namespaces)
       - Namespace: kim-prod-vlryx
@@ -91,8 +90,8 @@ FILE DESCRIPTIONS
       - Sync Policy:
         * Automated: true (prune: true, selfHeal: true)
         * Retry: Up to 5 times with backoff
-      - Namespace: argocd
-      - Syncs: Both argocd-vks.yaml and argocd-managedentity.yaml in wave order
+      - Namespace: ArgoCD installation namespace (omitted from YAML)
+      - Syncs the cluster, add-ons and registration in wave order
    
 4. argocd-vks-appproject.yaml
    ─────────────────────────────────────────────────────────────────────────
@@ -112,15 +111,20 @@ DEPLOYMENT OPTIONS
 
 Option 1: Direct kubectl (Simple, No App of Apps overhead)
 ─────────────────────────────────────────────────────────
-kubectl apply -f argocd-vks/argocd-vks.yaml
-kubectl apply -f argocd-managedentity.yaml
+kubectl apply -f argocd-vks/infra-vks-01.yaml
+# Wait for the cluster to be ready before registering and applying add-ons.
+kubectl apply -f argocd-vks/argocd-managedentity.yaml
+kubectl apply -f argocd-vks/cert-manager-addon.yaml
+kubectl apply -f argocd-vks/contour-addon.yaml
+kubectl apply -f argocd-vks/prometheus-addon.yaml
 ✓ Resources created immediately
 ✓ No Application orchestration
 ✗ Manual wave management
 
 Option 2: App of Apps via ArgoCD (Recommended, Full orchestration)
 ──────────────────────────────────────────────────────────────────
-kubectl apply -f argocd-app-of-apps.yaml
+kubectl apply -n argocd -f argocd-app-of-apps.yaml
+Replace argocd with the ArgoCD installation namespace if different.
 ✓ Automatic wave sequencing
 ✓ Repeatable, version-controlled
 ✓ Self-healing, automatic sync
@@ -132,7 +136,7 @@ WAVE EXECUTION SEQUENCE
 
 WAVE 0 Timeline (10-30 minutes)
 ────────────────────────────────
-T+0s      Cluster resource created from argocd-vks.yaml
+T+0s      Cluster resource created from infra-vks-01.yaml
 T+5s      Topology controller observes
 T+30s     VM provisioning starts (1 control plane, 1 worker)
 T+2m      VMs boot, OS initialization
@@ -165,19 +169,19 @@ SUCCESS INDICATORS
 ================================================================================
 
 ✅ Wave 0 Complete
-   Command: kubectl get cluster argocd-vks -n kim-prod-vlryx
+   Command: kubectl get cluster infra-vks-01 -n kim-prod-vlryx
    Expected: PHASE=Ready
 
 ✅ Wave 10 Complete
-   Command: kubectl describe managedentity argocd-vks-managed -n kim-prod-vlryx
+   Command: kubectl describe managedentity infra-vks-01-managed -n kim-prod-vlryx
    Expected: Phase=Ready, Condition Status: True
 
 ✅ Cluster Registered in ArgoCD
    Command: argocd cluster list
-   Expected: argocd-vks-prod appears in list
+   Expected: infra-vks-01 appears in list
 
 ✅ Cluster Secret Created
-   Command: kubectl get secret cls-vks-kim-prod-vlryx-argocd-vks -n kim-prod-vlryx
+   Command: kubectl get secret cls-vks-kim-prod-vlryx-infra-vks-01 -n kim-prod-vlryx
    Expected: Secret exists with kubeconfig
 
 ================================================================================
@@ -242,7 +246,7 @@ TROUBLESHOOTING QUICK REFERENCE
 ================================================================================
 
 Problem: Wave 0 hangs
-├─ Check: kubectl get cluster argocd-vks -n kim-prod-vlryx -w
+├─ Check: kubectl get cluster infra-vks-01 -n kim-prod-vlryx -w
 ├─ Cause: Infrastructure not available
 └─ Fix: Check VMware vSphere logs, verify capacity
 
@@ -252,7 +256,7 @@ Problem: Wave 10 fails with "SA not bound"
 └─ Fix: Re-apply argocd-managedentity.yaml
 
 Problem: ManagedEntity stuck in Pending
-├─ Check: kubectl describe managedentity argocd-vks-managed -n kim-prod-vlryx
+├─ Check: kubectl describe managedentity infra-vks-01-managed -n kim-prod-vlryx
 ├─ Cause: Cluster not Ready (Wave 0 still running)
 └─ Fix: Wait for Wave 0 to complete
 
@@ -293,7 +297,7 @@ This App of Apps is designed to be stored in Git:
 maxiepax/argocd/
 ├── argocd/                       ← Main directory
 │   ├── argocd-vks/
-│   │   └── argocd-vks.yaml       ← Cluster definition
+│   │   └── infra-vks-01.yaml       ← Cluster definition
 │   ├── argocd-managedentity.yaml ← Registration resources
 │   ├── argocd-app-of-apps.yaml   ← Orchestration
 │   └── README.md                 ← Documentation

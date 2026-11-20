@@ -1,0 +1,14 @@
+apiVersion: addons.kubernetes.vmware.com/v1alpha1
+kind: AddonInstall
+metadata:
+  name: infra-vks-01-prometheus
+  namespace: kim-prod-vlryx
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+spec:
+  addonRef:
+    name: prometheus
+  clusters:
+    - selector:
+        matchLabels:
+          cluster.x-k8s.io/cluster-name: infra-vks-01

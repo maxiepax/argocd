@@ -9,7 +9,7 @@ Application Created
 │
 ├─ Wait for dependencies
 │
-├─ WAVE 0: VKS Cluster Creation (argocd-vks.yaml)
+├─ WAVE 0: VKS Cluster Creation (infra-vks-01.yaml)
 │  │
 │  ├─ Create Cluster resource
 │  │  └─ metadata:
@@ -51,8 +51,8 @@ Application Created
 │  │        argocd.argoproj.io/sync-wave: "10"
 │  │  
 │  │  spec:
-│  │  - targetRef: Cluster argocd-vks (from Wave 0)
-│  │  - clusterName: argocd-vks-prod
+│  │  - targetRef: Cluster infra-vks-01 (from Wave 0)
+│  │  - clusterName: infra-vks-01
 │  │
 │  ├─ Operator Validation
 │  │  ├─ Verify service account bound to role
@@ -60,7 +60,7 @@ Application Created
 │  │  └─ Create kubeconfig
 │  │
 │  ├─ Create Cluster Secret
-│  │  └─ cls-vks-kim-prod-vlryx-argocd-vks
+│  │  └─ cls-vks-kim-prod-vlryx-infra-vks-01
 │  │
 │  └─ Status: Ready ✓
 │     (Takes 2-5 minutes)
@@ -123,7 +123,7 @@ Wave 10 Resources
      ├─ RoleBinding (references Role)
      └─ ManagedEntity
             └─ depends on
-                └─ Wave 0: Cluster (argocd-vks)
+                └─ Wave 0: Cluster (infra-vks-01)
                      └─ depends on
                          └─ Infrastructure Provider (VMware vSphere)
 ```
@@ -132,14 +132,14 @@ Wave 10 Resources
 
 ✅ **Wave 0 Success**
 ```
-$ kubectl get cluster argocd-vks -n kim-prod-vlryx
+$ kubectl get cluster infra-vks-01 -n kim-prod-vlryx
 NAME         PHASE   AGE
-argocd-vks   Ready   15m
+infra-vks-01   Ready   15m
 ```
 
 ✅ **Wave 10 Success**
 ```
-$ kubectl describe managedentity argocd-vks-managed -n kim-prod-vlryx | grep -A2 "Phase:"
+$ kubectl describe managedentity infra-vks-01-managed -n kim-prod-vlryx | grep -A2 "Phase:"
 Phase: Ready
 ```
 
@@ -147,7 +147,7 @@ Phase: Ready
 ```
 $ argocd cluster list
 SERVER                          NAME            VERSION  STATUS      MESSAGE
-https://172.16.44.33:6443       argocd-vks-prod          Successful
+https://172.16.44.33:6443       infra-vks-01          Successful
 ```
 
 ## Failure Points and Recovery
@@ -167,8 +167,8 @@ https://172.16.44.33:6443       argocd-vks-prod          Successful
 kubectl delete application argocd-vks-app-of-apps -n argocd
 
 # Option 2: Delete in reverse wave order
-kubectl delete managedentity argocd-vks-managed -n kim-prod-vlryx
-kubectl delete cluster argocd-vks -n kim-prod-vlryx
+kubectl delete managedentity infra-vks-01-managed -n kim-prod-vlryx
+kubectl delete cluster infra-vks-01 -n kim-prod-vlryx
 ```
 
 ## Wave Number Reference

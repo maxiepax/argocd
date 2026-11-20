@@ -1,25 +1,29 @@
 # Deployment Guide: App of Apps for VKS Cluster Registration
 
 ## 🎯 Objective
-Deploy a VKS cluster and automatically register it with ArgoCD using ArgoCD's App of Apps pattern with sync waves.
+Deploy `infra-vks-01`, register it with ArgoCD, and request VKS add-ons using
+sync waves. See [add-on setup](./APP_OF_APPS_README.md#vks-add-ons).
 
 ## 📦 What You Have
 
-4 main files created:
+Main files:
 
 ```
-argocd-vks.yaml
+infra-vks-01.yaml
 ├─ Wave 0: Creates VKS cluster
 └─ Time: 10-30 minutes to Ready state
 
+*-addon.yaml
+└─ Wave 10: Requests cert-manager, contour, and prometheus
+
 argocd-managedentity.yaml
-├─ Wave 10: Registers cluster to ArgoCD
+├─ Wave 10: Registers the cluster to ArgoCD
 ├─ Includes: Role, RoleBinding, ManagedEntity
 └─ Time: 2-5 minutes
 
 argocd-app-of-apps.yaml
 ├─ Orchestration Application
-└─ Syncs both files in wave order using the default project
+└─ Syncs the cluster and registration files using the default project
 
 argocd-vks-appproject.yaml
 └─ Optional separate AppProject
@@ -44,7 +48,7 @@ git commit -m "Add App of Apps for VKS cluster registration"
 git push
 
 # 2. Deploy the orchestration Application
-kubectl apply -f argocd-app-of-apps.yaml
+kubectl apply -n argocd -f argocd-app-of-apps.yaml
 
 # 3. Watch progress
 argocd app wait argocd-vks-app-of-apps --sync -v
@@ -53,6 +57,8 @@ argocd app wait argocd-vks-app-of-apps --sync -v
 Alternatively, paste the entire `argocd-app-of-apps.yaml` into the ArgoCD UI's
 Application YAML editor. The optional AppProject must be created separately and
 selected in the Application's `spec.project` if it is to be used.
+For kubectl commands, replace `argocd` with your ArgoCD installation namespace
+if it differs; this is separate from the destination namespace.
 
 ### Option B: Direct kubectl (Quick test)
 **Pros:** Immediate, no Git needed
@@ -60,16 +66,19 @@ selected in the Application's `spec.project` if it is to be used.
 
 ```bash
 # 1. Apply cluster creation
-kubectl apply -f argocd-vks/argocd-vks.yaml
+kubectl apply -f argocd-vks/infra-vks-01.yaml
 
 # 2. Wait 10-30 minutes for cluster to be Ready
-kubectl get cluster argocd-vks -n kim-prod-vlryx -w
+kubectl get cluster infra-vks-01 -n kim-prod-vlryx -w
 
 # 3. Apply registration
-kubectl apply -f argocd-managedentity.yaml
+kubectl apply -f argocd-vks/argocd-managedentity.yaml
+kubectl apply -f argocd-vks/cert-manager-addon.yaml
+kubectl apply -f argocd-vks/contour-addon.yaml
+kubectl apply -f argocd-vks/prometheus-addon.yaml
 
 # 4. Wait 2-5 minutes for registration
-kubectl get managedentity argocd-vks-managed -n kim-prod-vlryx -w
+kubectl get managedentity infra-vks-01-managed -n kim-prod-vlryx -w
 ```
 
 ## 📊 Real-Time Monitoring
@@ -89,25 +98,25 @@ kubectl describe application argocd-vks-app-of-apps -n argocd
 ### Monitor Wave 0: Cluster Creation
 ```bash
 # Terminal 1: Watch cluster status
-kubectl get cluster argocd-vks -n kim-prod-vlryx -w
+kubectl get cluster infra-vks-01 -n kim-prod-vlryx -w
 
 # Terminal 2: Get detailed info
-watch kubectl describe cluster argocd-vks -n kim-prod-vlryx
+watch kubectl describe cluster infra-vks-01 -n kim-prod-vlryx
 
 # Terminal 3: Check conditions (when Wave 0 is done, Phase: Ready appears)
-kubectl get cluster argocd-vks -n kim-prod-vlryx -o jsonpath='{.status.phase}'
+kubectl get cluster infra-vks-01 -n kim-prod-vlryx -o jsonpath='{.status.phase}'
 ```
 
 ### Monitor Wave 10: Cluster Registration
 ```bash
 # Terminal 1: Watch registration status
-kubectl get managedentity argocd-vks-managed -n kim-prod-vlryx -w
+kubectl get managedentity infra-vks-01-managed -n kim-prod-vlryx -w
 
 # Terminal 2: Get detailed info
-watch kubectl describe managedentity argocd-vks-managed -n kim-prod-vlryx
+watch kubectl describe managedentity infra-vks-01-managed -n kim-prod-vlryx
 
 # Terminal 3: Check phase (when Wave 10 is done, Phase: Ready appears)
-kubectl get managedentity argocd-vks-managed -n kim-prod-vlryx -o jsonpath='{.status.phase}'
+kubectl get managedentity infra-vks-01-managed -n kim-prod-vlryx -o jsonpath='{.status.phase}'
 ```
 
 ### Verify Final Success
@@ -115,14 +124,14 @@ kubectl get managedentity argocd-vks-managed -n kim-prod-vlryx -o jsonpath='{.st
 # Check cluster appears in ArgoCD
 argocd cluster list
 
-# Should show: argocd-vks-prod in the list with status "Successful"
+# Should show: infra-vks-01 in the list with status "Successful"
 ```
 
 ## ⏱️ Timeline & What to Expect
 
 ### T+0: Deployment Start
 ```
-kubectl apply -f argocd-app-of-apps.yaml
+kubectl apply -n argocd -f argocd-app-of-apps.yaml
 Application created: argocd-vks-app-of-apps
 ```
 
@@ -173,7 +182,7 @@ Application Status: Synced
 └─ Cluster available in ArgoCD ✓
 
 Command: argocd cluster list
-├─ argocd-vks-prod (status: Successful)
+├─ infra-vks-01 (status: Successful)
 ```
 
 ## ✅ Success Checklist
@@ -184,7 +193,7 @@ Command: argocd cluster list
   - Sync Result: Successful
 
 ### Wave 0: Cluster Creation
-- [ ] `kubectl get cluster argocd-vks -n kim-prod-vlryx`
+- [ ] `kubectl get cluster infra-vks-01 -n kim-prod-vlryx`
   - Phase: Ready
   - Status: Provisioned
 
@@ -194,22 +203,22 @@ Command: argocd cluster list
   - All nodes: Ready
 
 ### Wave 10: Cluster Registration
-- [ ] `kubectl get managedentity argocd-vks-managed -n kim-prod-vlryx`
+- [ ] `kubectl get managedentity infra-vks-01-managed -n kim-prod-vlryx`
   - Phase: Ready
 
-- [ ] `kubectl describe managedentity argocd-vks-managed -n kim-prod-vlryx`
+- [ ] `kubectl describe managedentity infra-vks-01-managed -n kim-prod-vlryx`
   - ArgoCDExists: True ✓
   - ClusterInfoFetched: True ✓
   - SupervisorServiceAccountBound: True ✓
   - SecretReady: True ✓
   - Ready: True ✓
 
-- [ ] `kubectl get secret cls-vks-kim-prod-vlryx-argocd-vks -n kim-prod-vlryx`
+- [ ] `kubectl get secret cls-vks-kim-prod-vlryx-infra-vks-01 -n kim-prod-vlryx`
   - Secret exists
 
 ### ArgoCD Integration
 - [ ] `argocd cluster list`
-  - argocd-vks-prod appears in list
+  - infra-vks-01 appears in list
   - Status: Successful
 
 ## 🔧 Troubleshooting During Deployment
@@ -220,14 +229,14 @@ Command: argocd cluster list
 kubectl describe application argocd-vks-app-of-apps -n argocd
 
 # Check specific resource status
-kubectl get cluster argocd-vks -n kim-prod-vlryx
-kubectl describe cluster argocd-vks -n kim-prod-vlryx
+kubectl get cluster infra-vks-01 -n kim-prod-vlryx
+kubectl describe cluster infra-vks-01 -n kim-prod-vlryx
 ```
 
 ### "Wave 0 not progressing"
 ```bash
 # Check cluster events
-kubectl describe cluster argocd-vks -n kim-prod-vlryx | grep Events -A 20
+kubectl describe cluster infra-vks-01 -n kim-prod-vlryx | grep Events -A 20
 
 # Check infrastructure
 # - Verify vSphere has available capacity
@@ -241,21 +250,21 @@ kubectl describe cluster argocd-vks -n kim-prod-vlryx | grep Events -A 20
 kubectl get rolebinding argocd-k8s-sa-rolebinding -n kim-prod-vlryx
 
 # If missing, re-apply the manifest
-kubectl apply -f argocd-managedentity.yaml
+kubectl apply -f argocd-vks/argocd-managedentity.yaml
 
 # Force reconciliation
-kubectl patch managedentity argocd-vks-managed -n kim-prod-vlryx \
+kubectl patch managedentity infra-vks-01-managed -n kim-prod-vlryx \
   --type merge -p '{"metadata":{"annotations":{"restartedAt":"'$(date -Iseconds)'"}}}'
 ```
 
 ### "Cluster not appearing in ArgoCD cluster list"
 ```bash
 # 1. Verify ManagedEntity is Ready
-kubectl get managedentity argocd-vks-managed -n kim-prod-vlryx -o jsonpath='{.status.phase}'
+kubectl get managedentity infra-vks-01-managed -n kim-prod-vlryx -o jsonpath='{.status.phase}'
 # Should show: Ready
 
 # 2. Verify cluster secret exists
-kubectl get secret cls-vks-kim-prod-vlryx-argocd-vks -n kim-prod-vlryx -o yaml
+kubectl get secret cls-vks-kim-prod-vlryx-infra-vks-01 -n kim-prod-vlryx -o yaml
 
 # 3. Force ArgoCD to reload clusters
 argocd cluster list --refresh
@@ -271,7 +280,7 @@ Once everything is synced and ready:
 ### 1. Test Cluster Access
 ```bash
 # Get cluster endpoint
-kubectl get managedentity argocd-vks-managed -n kim-prod-vlryx \
+kubectl get managedentity infra-vks-01-managed -n kim-prod-vlryx \
   -o jsonpath='{.status.clusterEndpointURL}'
 
 # Test access via ArgoCD (should work without issues)
@@ -365,7 +374,7 @@ For more details:
 
 Ready to deploy? Run:
 ```bash
-kubectl apply -f argocd-app-of-apps.yaml
+kubectl apply -n argocd -f argocd-app-of-apps.yaml
 ```
 
 Then monitor with:

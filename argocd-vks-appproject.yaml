@@ -12,7 +12,7 @@ spec:
     - 'https://github.com/maxiepax/argocd'
   destinations:
     - namespace: 'kim-prod-vlryx'
-      server: https://kubernetes.default.svc
+      server: https://automation.rainpole.io/proxy/k8s/namespaces/urn:vcloud:namespace:243532ce-cb03-4f68-9524-a8848260b051
   clusterResourceWhitelist:
     - group: cluster.x-k8s.io
       kind: Cluster

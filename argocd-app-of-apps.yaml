@@ -4,27 +4,26 @@
 # This Application orchestrates the creation and registration of the VKS cluster
 # in a controlled, wave-based manner:
 #
-#   Wave 0: Create the VKS cluster (argocd-vks.yaml)
-#     - Waits for cluster to be in Ready state before proceeding
+#   Wave 0: Create infra-vks-01 (infrastructure/)
 #
 #   Wave 10: Register cluster to ArgoCD (argocd-managedentity.yaml)
 #     - Creates RBAC permissions for ArgoCD
 #     - Registers the cluster as a ManagedEntity
+#     - Creates VKS AddonInstalls for cert-manager, contour, and prometheus
 #     - Cluster becomes available as deployment target
+#   Wave 20: Create the nginx and online-boutique Applications
 #
-# Apply with: kubectl apply -f argocd-app-of-apps.yaml
+# Apply with: kubectl apply -n <argocd-namespace> -f argocd-app-of-apps.yaml
 # Monitor with: argocd app get argocd-vks-app-of-apps -w
 
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: argocd-vks-app-of-apps
-  namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
   labels:
     app-type: app-of-apps
-    cluster-name: argocd-vks
 spec:
   project: default
 
@@ -32,9 +31,12 @@ spec:
     repoURL: https://github.com/maxiepax/argocd
     targetRevision: HEAD
     path: argocd-vks
+    directory:
+      recurse: true
+      include: '{infrastructure/*,argocd-managedentity.yaml,application/*-app.yaml,infra-vks-01.yaml,argocd-vks.yaml,cert-manager-addon.yaml,contour-addon.yaml,prometheus-addon.yaml}'
   
   destination:
-    server: https://kubernetes.default.svc
+    server: https://automation.rainpole.io/proxy/k8s/namespaces/urn:vcloud:namespace:243532ce-cb03-4f68-9524-a8848260b051
     namespace: kim-prod-vlryx
   
   syncPolicy:

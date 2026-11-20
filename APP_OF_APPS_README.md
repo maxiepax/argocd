@@ -1,24 +1,23 @@
 # ArgoCD VKS Cluster Registration - App of Apps Pattern
 
-This directory contains an App of Apps implementation for automating the creation and registration of a VKS (Tanzu Kubernetes Grid Service) cluster with ArgoCD using the VMware Operator for ArgoCD.
+This directory contains manifests for a VKS cluster, its registration with ArgoCD, and VKS add-ons.
 
 ## Architecture
 
 ```
 argocd-vks-app-of-apps (Main Application)
-├── Wave 0: VKS Cluster Creation (argocd-vks.yaml)
-│   ├── Create Cluster resource with cluster.x-k8s.io API
-│   └── Wait for cluster to reach Ready state
+├── Wave 0: Create infra-vks-01
 │
 └── Wave 10: Cluster Registration to ArgoCD (argocd-managedentity.yaml)
     ├── Create Role for ArgoCD service account
     ├── Create RoleBinding
-    └── Create ManagedEntity (registers cluster with ArgoCD)
+    ├── Create a ManagedEntity for the cluster
+    └── Request cert-manager, contour, and prometheus
 ```
 
 ## Files
 
-### `argocd-vks.yaml`
+### `infra-vks-01.yaml`
 - **Purpose**: Defines the VKS cluster to be created
 - **Wave**: 0 (First wave - initial resource creation)
 - **API Group**: `cluster.x-k8s.io/v1beta2`
@@ -30,20 +29,25 @@ argocd-vks-app-of-apps (Main Application)
   - Worker node pool configuration (1 replica)
   - VM class and storage class settings
 
+### `cert-manager-addon.yaml`, `contour-addon.yaml`, and `prometheus-addon.yaml`
+- **Purpose**: Request VKS-managed add-ons for `infra-vks-01`
+- **Wave**: 10
+- **Kind**: AddonInstall, created on the Supervisor
+
 ### `argocd-managedentity.yaml`
-- **Purpose**: Registers the created VKS cluster to ArgoCD
+- **Purpose**: Registers the VKS cluster to ArgoCD
 - **Wave**: 10 (Second wave - happens after cluster is ready)
 - **Contains**:
   - `Role`: RBAC role for `argocd-k8s-sa` service account to access cluster resources
   - `RoleBinding`: Binds the role to the service account
-  - `ManagedEntity`: VMware Operator CRD that:
+  - A `ManagedEntity` resource that:
     - References the VKS cluster (wave 0)
     - Creates a cluster secret in ArgoCD
     - Makes the cluster available as a deployment target
     - Enables App of Apps pattern on the cluster
 
 ### `argocd-app-of-apps.yaml`
-- **Purpose**: Main orchestration Application, syncing both YAML files in wave order
+- **Purpose**: Main orchestration Application, syncing the cluster and registration YAML files in wave order
 - **Project**: Uses the existing `default` AppProject
 
 ### `argocd-vks-appproject.yaml`
@@ -53,7 +57,7 @@ argocd-vks-app-of-apps (Main Application)
 ## Prerequisites
 
 1. **VMware Operator for ArgoCD 1.2.0+** installed in your vSphere environment
-2. **ArgoCD instance** running in `kim-prod-vlryx` namespace (or update namespace in manifests)
+2. **ArgoCD instance** installed and its Application namespace known
 3. **argocd-k8s-sa** ServiceAccount must exist (created by VMware Operator)
 4. **Git repository access**: Application references this GitHub repository
 5. **Permissions**:
@@ -61,14 +65,23 @@ argocd-vks-app-of-apps (Main Application)
    - Can create Roles and RoleBindings in that namespace
    - Can create Applications in ArgoCD namespace
 
+The Application targets the registered Supervisor proxy endpoint rather than
+`https://kubernetes.default.svc`. If the endpoint differs in your environment,
+update the Application's `spec.destination.server` and, if used, the optional
+AppProject's `spec.destinations` to match the server registered in ArgoCD.
+
 ## Deployment
 
 ### Option 1: Deploy via kubectl (Direct)
 
 ```bash
 # Apply all resources in correct order
-kubectl apply -f argocd-vks/argocd-vks.yaml
-kubectl apply -f argocd-managedentity.yaml
+kubectl apply -f argocd-vks/infra-vks-01.yaml
+# Wait for the cluster to become ready before applying registration and add-ons.
+kubectl apply -f argocd-vks/argocd-managedentity.yaml
+kubectl apply -f argocd-vks/cert-manager-addon.yaml
+kubectl apply -f argocd-vks/contour-addon.yaml
+kubectl apply -f argocd-vks/prometheus-addon.yaml
 ```
 
 ### Option 2: Deploy via ArgoCD (Recommended - Full App of Apps)
@@ -76,10 +89,13 @@ kubectl apply -f argocd-managedentity.yaml
 To use the ArgoCD UI, create an Application using the YAML editor and paste the
 entire `argocd-app-of-apps.yaml` file. It contains one Application document.
 Commit and push the source manifests before syncing.
+The Application's metadata namespace is omitted so the UI can use its own
+namespace. For kubectl, replace `argocd` below with the ArgoCD installation
+namespace if it differs; this is separate from the destination namespace.
 
 ```bash
 # Apply the App of Apps Application
-kubectl apply -f argocd-app-of-apps.yaml
+kubectl apply -n argocd -f argocd-app-of-apps.yaml
 
 # Monitor the application
 argocd app get argocd-vks-app-of-apps
@@ -93,7 +109,32 @@ The separate `argocd-vks-appproject.yaml` is optional and is not created by
 applying the Application. To use it, create the AppProject separately and set
 the Application's `spec.project` to `vks-cluster-registration`.
 
+## VKS Add-ons
+
+The three `AddonInstall` resources request cert-manager, contour, and prometheus
+using VKS add-on management, following the [reference manifests](https://github.com/vmware/vks-consumption-models/tree/main/argocd-app-of-apps/clusters/cl01).
+Each selects only the cluster labeled `cluster.x-k8s.io/cluster-name: infra-vks-01`.
+The Supervisor must provide the AddonInstall CRD and compatible add-on releases.
+
+On the Supervisor, check availability and reconciliation:
+
+```bash
+kubectl get addonreleases -n vmware-system-vks-public
+kubectl get addoninstall -n kim-prod-vlryx
+kubectl get clusteraddon -n kim-prod-vlryx
+kubectl describe addoninstall infra-vks-01-cert-manager -n kim-prod-vlryx
+kubectl describe addoninstall infra-vks-01-contour -n kim-prod-vlryx
+kubectl describe addoninstall infra-vks-01-prometheus -n kim-prod-vlryx
+```
+
+An ArgoCD sync applies the requests but does not itself prove installation
+succeeded. Check the add-on statuses and availability in the workload cluster.
+
 ## Wave Execution Timeline
+
+The cluster is in wave 0. ArgoCD advances between waves based on resource
+health; verify that your ArgoCD installation has an appropriate health
+assessment for the Cluster CRD before relying on it to wait for readiness.
 
 ### Wave 0 Execution
 1. VKS Cluster resource is created
@@ -108,11 +149,12 @@ the Application's `spec.project` to `vks-cluster-registration`.
 1. Role for `argocd-k8s-sa` is created with necessary permissions
 2. RoleBinding connects the service account to the role
 3. ManagedEntity resource is created
-4. VMware Operator validates service account permissions
-5. Operator creates kubeconfig and credentials
-6. Cluster secret is created in ArgoCD
-7. ManagedEntity reaches "Ready" status
-8. Cluster appears in ArgoCD's cluster list
+4. AddonInstall resources are created
+5. VMware Operator validates service account permissions
+6. Operator creates kubeconfig and credentials
+7. Cluster secret is created in ArgoCD
+8. ManagedEntity reaches "Ready" status
+9. Cluster appears in ArgoCD's cluster list
 
 **Duration**: 2-5 minutes
 
@@ -130,21 +172,21 @@ argocd app describe argocd-vks-app-of-apps
 ### Check Wave 0: Cluster Creation
 ```bash
 # Watch cluster provisioning
-kubectl get cluster argocd-vks -n kim-prod-vlryx -w
+kubectl get cluster infra-vks-01 -n kim-prod-vlryx -w
 
 # Detailed cluster status
-kubectl describe cluster argocd-vks -n kim-prod-vlryx
+kubectl describe cluster infra-vks-01 -n kim-prod-vlryx
 ```
 
 ### Check Wave 10: Cluster Registration
 ```bash
 # Check ManagedEntity status
 kubectl get managedentity -n kim-prod-vlryx
-kubectl describe managedentity argocd-vks-managed -n kim-prod-vlryx
+kubectl describe managedentity infra-vks-01-managed -n kim-prod-vlryx
 
 # Check generated cluster secret
-kubectl get secret -n kim-prod-vlryx | grep argocd-vks
-kubectl get secret cls-vks-kim-prod-vlryx-argocd-vks -n kim-prod-vlryx -o yaml
+kubectl get secret -n kim-prod-vlryx | grep infra-vks-01
+kubectl get secret cls-vks-kim-prod-vlryx-infra-vks-01 -n kim-prod-vlryx -o yaml
 ```
 
 ### Check ArgoCD Cluster Registration
@@ -174,7 +216,7 @@ argocd cluster get <cluster-name>
 
 ### ManagedEntity stuck in "Pending"
 ```bash
-kubectl describe managedentity argocd-vks-managed -n kim-prod-vlryx
+kubectl describe managedentity infra-vks-01-managed -n kim-prod-vlryx
 ```
 Check conditions for specific failure reasons.
 
@@ -187,7 +229,7 @@ kubectl get role argocd-k8s-sa-role -n kim-prod-vlryx
 kubectl get rolebinding argocd-k8s-sa-rolebinding -n kim-prod-vlryx
 
 # Force reconciliation
-kubectl patch managedentity argocd-vks-managed -n kim-prod-vlryx \
+kubectl patch managedentity infra-vks-01-managed -n kim-prod-vlryx \
   --type merge -p '{"metadata":{"annotations":{"kubectl.kubernetes.io/restartedAt":"'$(date -Iseconds)'"}}}'
 ```
 
@@ -200,7 +242,7 @@ kubectl patch managedentity argocd-vks-managed -n kim-prod-vlryx \
 ## Customization
 
 ### Changing Cluster Configuration
-Edit `argocd-vks.yaml`:
+Edit `infra-vks-01.yaml`:
 - `vmClass`: VM machine class (best-effort-small, best-effort-medium, etc.)
 - `version`: Kubernetes version
 - `replicas`: Control plane and worker replicas
@@ -237,7 +279,7 @@ metadata:
 ## Maintenance
 
 ### Updating Cluster Configuration
-1. Modify `argocd-vks.yaml` with new settings
+1. Modify `infra-vks-01.yaml` with new settings
 2. Commit to Git repository
 3. ArgoCD will automatically detect and sync changes (if automated sync is enabled)
 
@@ -247,8 +289,8 @@ metadata:
 kubectl delete application argocd-vks-app-of-apps -n argocd
 
 # Or manually delete resources in reverse wave order
-kubectl delete managedentity argocd-vks-managed -n kim-prod-vlryx
-kubectl delete cluster argocd-vks -n kim-prod-vlryx
+kubectl delete managedentity infra-vks-01-managed -n kim-prod-vlryx
+kubectl delete cluster infra-vks-01 -n kim-prod-vlryx
 ```
 
 ## Support

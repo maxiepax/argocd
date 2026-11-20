@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: infra-vks-01-nginx
+  namespace: kim-prod-vlryx
+  annotations:
+    argocd.argoproj.io/sync-wave: "20"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/maxiepax/argocd
+    targetRevision: HEAD
+    path: argocd-vks/application/nginx
+  destination:
+    name: infra-vks-01
+    namespace: demo-app
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

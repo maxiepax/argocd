@@ -4,18 +4,22 @@
 
 ```bash
 # Apply the App of Apps Application to ArgoCD
-kubectl apply -f argocd-app-of-apps.yaml
+kubectl apply -n argocd -f argocd-app-of-apps.yaml
 ```
 
 Alternatively, paste the entire `argocd-app-of-apps.yaml` into the ArgoCD UI's
 Application YAML editor. Commit and push the source manifests before syncing.
+For kubectl, replace `argocd` with your ArgoCD installation namespace if it
+differs; this is not the destination namespace.
 The Application uses the `default` project; `argocd-vks-appproject.yaml` is
 optional and must be created and selected separately.
 
 That's it! ArgoCD will now orchestrate:
 
-1. **Wave 0**: Create your VKS cluster
-2. **Wave 10**: Register it with ArgoCD
+1. **Wave 0**: Create `infra-vks-01`
+2. **Wave 10**: Register it and request cert-manager, contour, and prometheus
+
+See [add-on setup and verification](./APP_OF_APPS_README.md#vks-add-ons).
 
 ## 📊 Monitor Progress
 
@@ -31,13 +35,13 @@ kubectl get application argocd-vks-app-of-apps -n argocd -w
 
 ### Cluster Creation (Wave 0)
 ```bash
-kubectl get cluster argocd-vks -n kim-prod-vlryx
+kubectl get cluster infra-vks-01 -n kim-prod-vlryx
 ```
 Expected: `STATUS: Ready`
 
 ### Cluster Registration (Wave 10)
 ```bash
-kubectl describe managedentity argocd-vks-managed -n kim-prod-vlryx
+kubectl describe managedentity infra-vks-01-managed -n kim-prod-vlryx
 ```
 Expected: `Phase: Ready`
 
@@ -45,13 +49,14 @@ Expected: `Phase: Ready`
 ```bash
 argocd cluster list
 ```
-Expected: `argocd-vks-prod` appears in the list
+Expected: `infra-vks-01` appears in the list
 
 ## 📁 Files Overview
 
 | File | Purpose | Wave |
 |------|---------|------|
-| `argocd-vks.yaml` | VKS Cluster definition | 0 |
+| `infra-vks-01.yaml` | VKS Cluster definition | 0 |
+| `*-addon.yaml` | VKS add-on installations | 10 |
 | `argocd-managedentity.yaml` | Cluster registration | 10 |
 | `argocd-app-of-apps.yaml` | Orchestration | - |
 | `argocd-vks-appproject.yaml` | Optional separate AppProject | - |

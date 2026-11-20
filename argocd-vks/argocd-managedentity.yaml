@@ -3,7 +3,7 @@
 # This manifest registers a VKS cluster to an ArgoCD instance using the ManagedEntity CRD
 # 
 # Part of App of Apps pattern:
-#   - Wave 0: VKS Cluster creation (argocd-vks.yaml)
+#   - Wave 0: VKS Cluster creation (infra-vks-01.yaml)
 #   - Wave 10: Cluster registration to ArgoCD (this file)
 #
 # Prerequisites:
@@ -12,7 +12,7 @@
 #   - You must be in the vSphere Namespace (kim-prod-vlryx in this example)
 #
 # To apply this manifest:
-#   kubectl apply -f argocd-managedentity.yaml
+#   kubectl apply -f argocd-vks/argocd-managedentity.yaml
 
 ---
 # Role for ArgoCD service account to discover and manage the VKS cluster
@@ -67,10 +67,10 @@ subjects:
 apiVersion: argocd-service.vsphere.vmware.com/v1alpha1
 kind: ManagedEntity
 metadata:
-  name: argocd-vks-managed
+  name: infra-vks-01-managed
   namespace: kim-prod-vlryx
   labels:
-    cluster-name: argocd-vks
+    cluster-name: infra-vks-01
     app: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "10"
@@ -80,11 +80,11 @@ spec:
   targetRef:
     apiGroup: cluster.x-k8s.io           # API group for Cluster API (VKS uses this)
     kind: Cluster                         # Resource kind
-    name: argocd-vks                      # Name of the VKS cluster
+    name: infra-vks-01                    # Name of the VKS cluster
     namespace: kim-prod-vlryx             # vSphere namespace where cluster resides
   
   # Display name for the cluster in ArgoCD
-  clusterName: argocd-vks-prod
+  clusterName: infra-vks-01
   
   # ArgoCD project to associate this cluster with
   # Using 'default' allows use with any ArgoCD AppProject
@@ -96,7 +96,7 @@ spec:
   
   # Custom labels to apply to the generated ArgoCD cluster secret
   secretLabels:
-    managed-by: argocd-vks
+    managed-by: argocd-vks-app-of-apps
     cluster-environment: production
   
   # Optional: Custom annotations for the generated secret

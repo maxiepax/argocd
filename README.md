@@ -6,20 +6,24 @@
 
 This repository contains a complete **App of Apps** implementation that:
 
-1. **Wave 0** (0-30 min): Creates a Tanzu VKS cluster using Cluster API
-2. **Wave 10** (30-35 min): Automatically registers the cluster with ArgoCD using ManagedEntity CRD
+1. **Wave 0**: Creates `infra-vks-01` using Cluster API
+2. **Wave 10**: Registers the cluster and requests cert-manager, contour, and prometheus
 
-The entire process is orchestrated by ArgoCD with sync waves, ensuring the cluster is fully created before registration begins.
+`infra-vks-01` has one fixed worker. See [add-on setup and verification](./APP_OF_APPS_README.md#vks-add-ons).
+ArgoCD sync waves require an appropriate Cluster health assessment to wait for
+readiness before registration.
 
 ## 📋 Quick Start
 
 ### Deploy in 1 command:
 ```bash
-kubectl apply -f argocd-app-of-apps.yaml
+kubectl apply -n argocd -f argocd-app-of-apps.yaml
 ```
 
 Alternatively, paste the entire `argocd-app-of-apps.yaml` into the ArgoCD UI's
 Application YAML editor. Commit and push the source manifests before syncing.
+For kubectl commands, replace `argocd` with your ArgoCD installation namespace
+if it differs; this is separate from the destination namespace.
 
 ### Monitor progress:
 ```bash
@@ -28,7 +32,7 @@ argocd app watch argocd-vks-app-of-apps
 
 ### Verify success (15-40 minutes later):
 ```bash
-argocd cluster list  # Should show argocd-vks-prod
+argocd cluster list  # Should show infra-vks-01
 ```
 
 👉 **For more details, see [QUICK_START.md](./QUICK_START.md)**
@@ -37,8 +41,9 @@ argocd cluster list  # Should show argocd-vks-prod
 
 | File | Purpose | Wave |
 |------|---------|------|
-| `argocd-vks/argocd-vks.yaml` | VKS Cluster definition | 0 |
-| `argocd-vks/argocd-managedentity.yaml` | Cluster registration (Role, RoleBinding, ManagedEntity) | 10 |
+| `argocd-vks/infra-vks-01.yaml` | VKS Cluster, one fixed worker | 0 |
+| `argocd-vks/argocd-managedentity.yaml` | RBAC and cluster registration | 10 |
+| `argocd-vks/*-addon.yaml` | cert-manager, contour, and prometheus AddonInstalls | 10 |
 | `argocd-app-of-apps.yaml` | Orchestration Application (uses the `default` project) | - |
 | `argocd-vks-appproject.yaml` | Optional separate AppProject | - |
 | **Documentation** | | |
@@ -54,8 +59,9 @@ argocd cluster list  # Should show argocd-vks-prod
 ```
 argocd/
 ├── argocd-vks/
-│   ├── argocd-vks.yaml              Wave 0: Cluster creation
-│   └── argocd-managedentity.yaml    Wave 10: Registration
+│   ├── infra-vks-01.yaml              Wave 0: Cluster creation
+│   ├── argocd-managedentity.yaml    Wave 10: Registration
+│   └── *-addon.yaml                 Wave 10: Add-on installations
 ├── argocd-app-of-apps.yaml          Orchestration
 ├── argocd-vks-appproject.yaml       Optional AppProject
 ├── README.md                        (This file)
@@ -69,7 +75,7 @@ argocd/
 ## ⏱️ Timeline
 
 ```
-kubectl apply -f argocd-app-of-apps.yaml
+kubectl apply -n argocd -f argocd-app-of-apps.yaml
            ↓
 Wave 0: Create VKS Cluster (10-30 min)
 ├─ Cluster CRD created
@@ -96,7 +102,7 @@ git commit -m "Add App of Apps for VKS cluster"
 git push
 
 # Deploy the orchestration
-kubectl apply -f argocd-app-of-apps.yaml
+kubectl apply -n argocd -f argocd-app-of-apps.yaml
 ```
 
 **Pros:**
@@ -110,8 +116,12 @@ kubectl apply -f argocd-app-of-apps.yaml
 
 ### Option 2: Direct kubectl
 ```bash
-kubectl apply -f argocd-vks/argocd-vks.yaml
-kubectl apply -f argocd-managedentity.yaml
+kubectl apply -f argocd-vks/infra-vks-01.yaml
+# Wait for the cluster to become ready before registering it and applying add-ons.
+kubectl apply -f argocd-vks/argocd-managedentity.yaml
+kubectl apply -f argocd-vks/cert-manager-addon.yaml
+kubectl apply -f argocd-vks/contour-addon.yaml
+kubectl apply -f argocd-vks/prometheus-addon.yaml
 ```
 
 **Pros:**
@@ -124,23 +134,23 @@ kubectl apply -f argocd-managedentity.yaml
 
 ## ✅ Success Criteria
 
-After deployment, you should see:
+After deployment, check the cluster and registration. For example:
 
 ```bash
 # Wave 0 Complete
-$ kubectl get cluster argocd-vks -n kim-prod-vlryx
+$ kubectl get cluster infra-vks-01 -n kim-prod-vlryx
 NAME         PHASE   AGE
-argocd-vks   Ready   15m
+infra-vks-01   Ready   15m
 
 # Wave 10 Complete
-$ kubectl get managedentity argocd-vks-managed -n kim-prod-vlryx
+$ kubectl get managedentity infra-vks-01-managed -n kim-prod-vlryx
 NAME                 PHASE   AGE
-argocd-vks-managed   Ready   5m
+infra-vks-01-managed   Ready   5m
 
 # Cluster in ArgoCD
 $ argocd cluster list
 SERVER                          NAME            VERSION  STATUS
-https://172.16.44.33:6443       argocd-vks-prod          Successful
+https://172.16.44.33:6443       infra-vks-01          Successful
 ```
 
 ## 📖 Documentation Guide
@@ -198,7 +208,7 @@ sed -i 's/kim-prod-vlryx/your-namespace/g' *.yaml argocd-vks/*.yaml
 Create new resources with `argocd.argoproj.io/sync-wave: "15"` annotation
 
 ### Change cluster config
-Edit `argocd-vks/argocd-vks.yaml`:
+Edit `argocd-vks/infra-vks-01.yaml`:
 - `vmClass`: VM machine class
 - `version`: Kubernetes version
 - `replicas`: Control plane/worker replicas
@@ -216,8 +226,8 @@ argocd app watch argocd-vks-app-of-apps
 kubectl get application argocd-vks-app-of-apps -n argocd -w
 
 # Check specific waves
-kubectl get cluster argocd-vks -n kim-prod-vlryx -w        # Wave 0
-kubectl get managedentity argocd-vks-managed -n kim-prod-vlryx -w  # Wave 10
+kubectl get cluster infra-vks-01 -n kim-prod-vlryx -w        # Wave 0
+kubectl get managedentity infra-vks-01-managed -n kim-prod-vlryx -w  # Wave 10
 ```
 
 ## 🚨 Troubleshooting
@@ -271,7 +281,7 @@ Part of maxiepax/argocd repository.
 
 ```bash
 # Deploy
-kubectl apply -f argocd-app-of-apps.yaml
+kubectl apply -n argocd -f argocd-app-of-apps.yaml
 
 # Monitor
 argocd app watch argocd-vks-app-of-apps
