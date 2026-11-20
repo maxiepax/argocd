@@ -11,8 +11,19 @@ spec:
       labels: {app: frontend}
     spec:
       automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: frontend
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
           image: us-central1-docker.pkg.dev/google-samples/microservices-demo/frontend:v0.10.5
           ports: [{containerPort: 8080}]
           env:
@@ -46,8 +57,19 @@ spec:
       labels: {app: productcatalogservice}
     spec:
       automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: productcatalogservice
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
           image: us-central1-docker.pkg.dev/google-samples/microservices-demo/productcatalogservice:v0.10.5
           ports: [{containerPort: 3550}]
           env:
@@ -72,8 +94,19 @@ spec:
       labels: {app: currencyservice}
     spec:
       automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: currencyservice
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
           image: us-central1-docker.pkg.dev/google-samples/microservices-demo/currencyservice:v0.10.5
           ports: [{containerPort: 7000}]
           env:
@@ -98,8 +131,19 @@ spec:
       labels: {app: cartservice}
     spec:
       automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: cartservice
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
           image: us-central1-docker.pkg.dev/google-samples/microservices-demo/cartservice:v0.10.5
           ports: [{containerPort: 7070}]
           env:
@@ -123,15 +167,32 @@ spec:
       labels: {app: redis-cart}
     spec:
       automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: redis
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
           image: public.ecr.aws/docker/library/redis:8.6.4-alpine3.23
           ports: [{containerPort: 6379}]
+          volumeMounts:
+            - name: redis-data
+              mountPath: /data
           readinessProbe:
             tcpSocket: {port: 6379}
           resources:
             requests: {cpu: 70m, memory: 200Mi}
             limits: {cpu: 125m, memory: 256Mi}
+      volumes:
+        - name: redis-data
+          emptyDir: {}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -146,8 +207,19 @@ spec:
       labels: {app: recommendationservice}
     spec:
       automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: recommendationservice
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
           image: us-central1-docker.pkg.dev/google-samples/microservices-demo/recommendationservice:v0.10.5
           ports: [{containerPort: 8080}]
           env:
@@ -173,8 +245,19 @@ spec:
       labels: {app: shippingservice}
     spec:
       automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: shippingservice
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
           image: us-central1-docker.pkg.dev/google-samples/microservices-demo/shippingservice:v0.10.5
           ports: [{containerPort: 50051}]
           env:
@@ -199,8 +282,19 @@ spec:
       labels: {app: checkoutservice}
     spec:
       automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: checkoutservice
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
           image: us-central1-docker.pkg.dev/google-samples/microservices-demo/checkoutservice:v0.10.5
           ports: [{containerPort: 5050}]
           env:
@@ -230,8 +324,19 @@ spec:
       labels: {app: paymentservice}
     spec:
       automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: paymentservice
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
           image: us-central1-docker.pkg.dev/google-samples/microservices-demo/paymentservice:v0.10.5
           ports: [{containerPort: 50051}]
           env:
@@ -256,8 +361,19 @@ spec:
       labels: {app: emailservice}
     spec:
       automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: emailservice
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
           image: us-central1-docker.pkg.dev/google-samples/microservices-demo/emailservice:v0.10.5
           ports: [{containerPort: 5000}]
           env:
@@ -282,8 +398,19 @@ spec:
       labels: {app: adservice}
     spec:
       automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: adservice
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
           image: us-central1-docker.pkg.dev/google-samples/microservices-demo/adservice:v0.10.5
           ports: [{containerPort: 9555}]
           env:
@@ -307,8 +434,19 @@ spec:
       labels: {app: loadgenerator}
     spec:
       automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: loadgenerator
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
           image: us-central1-docker.pkg.dev/google-samples/microservices-demo/loadgenerator:v0.10.5
           env:
             - {name: FRONTEND_ADDR, value: "frontend:80"}
