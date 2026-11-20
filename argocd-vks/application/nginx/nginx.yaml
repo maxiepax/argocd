@@ -19,7 +19,7 @@ spec:
         - name: nginx
           #image: dockerhub.packages.vcfd.broadcom.net/nginxinc/nginx-unprivileged:stable
           #image: dockerhub.packages.vcfd.broadcom.net:443/gateway-reg-docker-vr/nginxinc/nginx-unprivileged:stable
-          image: nginx:stable
+          image: nginx/nginx-unprivileged:stable
           ports:
             - containerPort: 8080
           securityContext:
