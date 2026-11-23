@@ -16,7 +16,7 @@ spec:
       valueFiles:
         - values.yaml
   destination:
-    server: {{ required "supervisor.namespace is required" .Values.supervisor.namespace | quote }}
+    name: {{ required "supervisor.namespace is required" .Values.supervisor.namespace | quote }}
     namespace: {{ required "supervisor.namespace is required" .Values.supervisor.namespace | quote }}
   syncPolicy:
     automated:

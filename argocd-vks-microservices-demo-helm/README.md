@@ -47,11 +47,11 @@ deploys the same Online Boutique manifests as the non-Helm demo.
    argocd cluster list
    ```
 
-The bootstrap uses the Supervisor namespace as both the destination server and
-namespace, as supported by this VCF Automation environment. Confirm that this
-destination works in your Argo CD installation. The VKS class, version, VM
-class, storage class, networks, and add-on releases must be available and
-suitable for the target Supervisor.
+The bootstrap uses the Supervisor namespace as both the registered destination
+name and namespace, as supported by this VCF Automation environment. Confirm
+that this destination works in your Argo CD installation. The VKS class,
+version, VM class, storage class, networks, and add-on releases must be
+available and suitable for the target Supervisor.
 
 ## Wave diagram
 

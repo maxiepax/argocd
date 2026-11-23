@@ -34,8 +34,8 @@ The Supervisor namespace is `kim-prod-vlryx`; the workload namespace is
 
    The parent manifest omits `metadata.namespace`; use the actual Argo CD
    installation namespace if it differs. The parent uses `kim-prod-vlryx` for
-   both the destination server and namespace, as supported by this VCF
-   Automation environment.
+   both the registered destination name and namespace, as supported by this
+   VCF Automation environment.
 
 3. Monitor the parent and verify that `infra-vks-01` appears in Argo CD:
 
