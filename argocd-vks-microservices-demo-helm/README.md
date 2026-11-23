@@ -1,18 +1,19 @@
-# VKS and Online Boutique with Argo CD and Helm
+# VKS and Online Boutique with Argo CD and Helm via VCF Automation.
 
-This is the Helm version of the VKS microservices demo. The parent Argo CD
-Application renders the chart in this directory; the wave-20 child Application
+This is the Helm version of the VKS microservices demo. The goal is to demonstrate
+how to use the GitOps functionality from the perspective of a consumer in VCF Automation.
+The parent Argo CD Application renders the chart in this directory; the wave-20 child Application
 deploys the same Online Boutique manifests as the non-Helm demo.
 
 ## Quick start
 
 1. Fork or copy this repository. Install Helm locally and ensure your Supervisor
-   has VKS, the VMware Operator for Argo CD, the `argocd-k8s-sa` service
-   account in your Supervisor namespace, and the required add-on releases.
+   has VKS, the VMware Operator for Argo CD 1.30 or higher (installed by the service provider), 
+   the `argocd-k8s-sa` service account in your Supervisor namespace, and the required add-on releases.
    The Argo CD instance must be able to access the repository, the registered
    Supervisor destination, and the registered VKS cluster.
 2. Edit [values.yaml](values.yaml): set the repository URL and revision, the
-   Supervisor namespace and its registered proxy endpoint, and the VKS
+   Supervisor namespace, and the VKS
    settings for your environment. The defaults describe the original demo
    environment and will generally need to be changed. Ensure the `default`
    project, or your selected project, allows the repository, destinations, and
@@ -46,10 +47,11 @@ deploys the same Online Boutique manifests as the non-Helm demo.
    argocd cluster list
    ```
 
-The Supervisor endpoint must already be registered in Argo CD; it is not
-necessarily `https://kubernetes.default.svc`. The VKS class, version, VM class,
-storage class, networks, and add-on releases must be available and suitable
-for the target Supervisor.
+The bootstrap uses the Supervisor namespace as both the destination server and
+namespace, as supported by this VCF Automation environment. Confirm that this
+destination works in your Argo CD installation. The VKS class, version, VM
+class, storage class, networks, and add-on releases must be available and
+suitable for the target Supervisor.
 
 ## Wave diagram
 
