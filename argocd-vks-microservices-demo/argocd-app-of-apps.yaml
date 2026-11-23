@@ -36,7 +36,7 @@ spec:
       include: '{infrastructure/*,argocd-managedentity.yaml,application/*-app.yaml,infra-vks-01.yaml,argocd-vks.yaml,cert-manager-addon.yaml,contour-addon.yaml,prometheus-addon.yaml}'
   
   destination:
-    server: https://automation.rainpole.io/proxy/k8s/namespaces/urn:vcloud:namespace:243532ce-cb03-4f68-9524-a8848260b051
+    server: kim-prod-vlryx
     namespace: kim-prod-vlryx
   
   syncPolicy:
