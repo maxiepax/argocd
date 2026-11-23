@@ -1,0 +1,25 @@
+repository:
+  url: https://github.com/maxiepax/argocd
+  revision: HEAD
+  chartPath: argocd-vks-microservices-demo-helm
+
+supervisor:
+  namespace: kim-prod-vlryx
+  server: https://automation.rainpole.io/proxy/k8s/namespaces/urn:vcloud:namespace:243532ce-cb03-4f68-9524-a8848260b051
+
+argoProject: default
+
+cluster:
+  name: infra-vks-01
+  class: builtin-generic-v3.7.0
+  classNamespace: vmware-system-vks-public
+  version: v1.36.2---vmware.2-vkr.3
+  vmClass: best-effort-medium
+  storageClass: vsan-default-storage-policy
+  controlPlaneReplicas: 1
+  workerReplicas: 2
+  podCIDR: 10.95.0.0/16
+  serviceCIDR: 10.96.0.0/12
+
+application:
+  namespace: online-boutique

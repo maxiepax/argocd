@@ -1,0 +1,42 @@
+apiVersion: cluster.x-k8s.io/v1beta2
+kind: Cluster
+metadata:
+  name: {{ required "cluster.name is required" .Values.cluster.name | quote }}
+  namespace: {{ required "supervisor.namespace is required" .Values.supervisor.namespace | quote }}
+  labels:
+    cluster.x-k8s.io/cluster-name: {{ .Values.cluster.name | quote }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+    description: "VKS Cluster - Wave 0: Initial cluster creation"
+spec:
+  clusterNetwork:
+    pods:
+      cidrBlocks:
+        - {{ .Values.cluster.podCIDR | quote }}
+    services:
+      cidrBlocks:
+        - {{ .Values.cluster.serviceCIDR | quote }}
+    serviceDomain: cluster.local
+  topology:
+    classRef:
+      name: {{ .Values.cluster.class | quote }}
+      namespace: {{ .Values.cluster.classNamespace | quote }}
+    version: {{ .Values.cluster.version | quote }}
+    variables:
+      - name: vmClass
+        value: {{ .Values.cluster.vmClass | quote }}
+      - name: storageClass
+        value: {{ .Values.cluster.storageClass | quote }}
+    controlPlane:
+      replicas: {{ .Values.cluster.controlPlaneReplicas }}
+      metadata:
+        annotations:
+          run.tanzu.vmware.com/resolve-os-image: os-name=photon
+    workers:
+      machineDeployments:
+        - class: node-pool
+          name: {{ printf "%s-np-k3sx" .Values.cluster.name | quote }}
+          replicas: {{ .Values.cluster.workerReplicas }}
+          metadata:
+            annotations:
+              run.tanzu.vmware.com/resolve-os-image: os-name=photon

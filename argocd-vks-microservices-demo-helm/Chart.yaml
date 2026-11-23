@@ -1,0 +1,5 @@
+apiVersion: v2
+name: vks-microservices-demo
+description: VKS cluster, add-ons, registration, and Online Boutique Application
+type: application
+version: 0.1.0

@@ -1,0 +1,17 @@
+{{- range $addon := list "cert-manager" "contour" "prometheus" }}
+---
+apiVersion: addons.kubernetes.vmware.com/v1alpha1
+kind: AddonInstall
+metadata:
+  name: {{ printf "%s-%s" $.Values.cluster.name $addon | quote }}
+  namespace: {{ $.Values.supervisor.namespace | quote }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "10"
+spec:
+  addonRef:
+    name: {{ $addon | quote }}
+  clusters:
+    - selector:
+        matchLabels:
+          cluster.x-k8s.io/cluster-name: {{ $.Values.cluster.name | quote }}
+{{- end }}

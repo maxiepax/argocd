@@ -1,0 +1,5 @@
+apiVersion: v2
+name: vks-microservices-demo-bootstrap
+description: Bootstrap Application for the VKS microservices demo
+type: application
+version: 0.1.0

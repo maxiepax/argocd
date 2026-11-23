@@ -1,0 +1,33 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd-vks-app-of-apps
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels:
+    app-type: app-of-apps
+spec:
+  project: {{ required "argoProject is required" .Values.argoProject | quote }}
+  source:
+    repoURL: {{ required "repository.url is required" .Values.repository.url | quote }}
+    targetRevision: {{ required "repository.revision is required" .Values.repository.revision | quote }}
+    path: {{ required "repository.chartPath is required" .Values.repository.chartPath | quote }}
+    helm:
+      valueFiles:
+        - values.yaml
+  destination:
+    server: {{ required "supervisor.server is required" .Values.supervisor.server | quote }}
+    namespace: {{ required "supervisor.namespace is required" .Values.supervisor.namespace | quote }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=false
+      - RespectIgnoreDifferences=true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

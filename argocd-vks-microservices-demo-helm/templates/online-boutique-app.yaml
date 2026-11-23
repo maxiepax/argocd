@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: {{ printf "%s-online-boutique" .Values.cluster.name | quote }}
+  namespace: {{ .Values.supervisor.namespace | quote }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "20"
+spec:
+  project: {{ .Values.argoProject | quote }}
+  source:
+    repoURL: {{ .Values.repository.url | quote }}
+    targetRevision: {{ .Values.repository.revision | quote }}
+    path: {{ printf "%s/application" .Values.repository.chartPath | quote }}
+    directory:
+      exclude: '*-app.yaml'
+  destination:
+    name: {{ .Values.cluster.name | quote }}
+    namespace: {{ .Values.application.namespace | quote }}
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
