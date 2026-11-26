@@ -4,7 +4,7 @@ repository:
   chartPath: argocd-vks-microservices-demo-helm
 
 supervisor:
-  namespace: kim-prod-vlryx
+  namespace: kim-prod-x4tqc
 
 argoProject: default
 

@@ -2,7 +2,7 @@ apiVersion: cluster.x-k8s.io/v1beta2
 kind: Cluster
 metadata:
   name: infra-vks-01
-  namespace: kim-prod-vlryx
+  namespace: kim-prod-x4tqc
   labels:
     cluster.x-k8s.io/cluster-name: infra-vks-01
   annotations:

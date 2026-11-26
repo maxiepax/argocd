@@ -2,7 +2,7 @@ apiVersion: addons.kubernetes.vmware.com/v1alpha1
 kind: AddonInstall
 metadata:
   name: infra-vks-01-cert-manager
-  namespace: kim-prod-vlryx
+  namespace: kim-prod-x4tqc
   annotations:
     argocd.argoproj.io/sync-wave: "10"
 spec:

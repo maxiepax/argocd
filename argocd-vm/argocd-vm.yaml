@@ -2,7 +2,7 @@ apiVersion: vmoperator.vmware.com/v1alpha5
 kind: VirtualMachine
 metadata:
   name: argocd-vm
-  namespace: kim-argocd-drx5d
+  namespace: kim-prod-x4tqc
   labels:
     vm-selector: argocd-vm
     argocd-vm-lb: vm-lb-selector

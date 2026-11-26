@@ -2,7 +2,7 @@
 
 This demo manages the `infra-vks-01` VKS cluster, its Argo CD
 registration, VKS add-ons, and the Online Boutique demo using an App of Apps.
-The Supervisor namespace is `kim-prod-vlryx`; the workload namespace is
+The Supervisor namespace is `kim-prod-x4tqc`; the workload namespace is
 `online-boutique`.
 
 ## Quick start
@@ -12,7 +12,7 @@ The Supervisor namespace is `kim-prod-vlryx`; the workload namespace is
 - An Argo CD instance on the Supervisor, with access to this Git repository
   and the Supervisor destination configured in `argocd-app-of-apps.yaml`.
 - VKS, the VMware Operator for Argo CD, and the `argocd-k8s-sa` service
-  account in `kim-prod-vlryx`. The Supervisor must provide the `AddonInstall`
+  account in `kim-prod-x4tqc`. The Supervisor must provide the `AddonInstall`
   CRD and compatible cert-manager, contour, and prometheus add-on releases.
 - Sufficient vSphere capacity, network connectivity, the configured storage
   class, and the Kubernetes version and VM class specified in the cluster
@@ -29,11 +29,11 @@ The Supervisor namespace is `kim-prod-vlryx`; the workload namespace is
    From this directory:
 
    ```bash
-   kubectl apply -n kim-prod-vlryx -f argocd-app-of-apps.yaml
+   kubectl apply -n kim-prod-x4tqc -f argocd-app-of-apps.yaml
    ```
 
    The parent manifest omits `metadata.namespace`; use the actual Argo CD
-   installation namespace if it differs. The parent uses `kim-prod-vlryx` for
+   installation namespace if it differs. The parent uses `kim-prod-x4tqc` for
    both the registered destination name and namespace, as supported by this
    VCF Automation environment.
 
@@ -53,7 +53,7 @@ Automatic pruning can delete resources that disappear from the selected source.
 ## Wave diagram
 
 ```text
-argocd-vks-app-of-apps  ->  Supervisor / kim-prod-vlryx
+argocd-vks-app-of-apps  ->  Supervisor / kim-prod-x4tqc
   |
   +-- Wave 0:  Cluster infra-vks-01
   |
@@ -108,11 +108,11 @@ Argo CD installation and destinations.
 Use the **Supervisor context** for cluster, registration, and add-on status:
 
 ```bash
-kubectl get cluster infra-vks-01 -n kim-prod-vlryx
-kubectl describe managedentity infra-vks-01-managed -n kim-prod-vlryx
+kubectl get cluster infra-vks-01 -n kim-prod-x4tqc
+kubectl describe managedentity infra-vks-01-managed -n kim-prod-x4tqc
 kubectl get addonreleases -n vmware-system-vks-public
-kubectl get addoninstall,clusteraddon -n kim-prod-vlryx
-kubectl describe addoninstall infra-vks-01-contour -n kim-prod-vlryx
+kubectl get addoninstall,clusteraddon -n kim-prod-x4tqc
+kubectl describe addoninstall infra-vks-01-contour -n kim-prod-x4tqc
 ```
 
 For add-on failures, describe the corresponding `infra-vks-01-cert-manager`

@@ -36,8 +36,8 @@ spec:
       include: '{infrastructure/*,argocd-managedentity.yaml,application/*-app.yaml,infra-vks-01.yaml,argocd-vks.yaml,cert-manager-addon.yaml,contour-addon.yaml,prometheus-addon.yaml}'
   
   destination:
-    name: kim-prod-vlryx
-    namespace: kim-prod-vlryx
+    name: kim-prod-x4tqc
+    namespace: kim-prod-x4tqc
   
   syncPolicy:
     automated:

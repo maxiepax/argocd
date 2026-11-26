@@ -9,7 +9,7 @@
 # Prerequisites:
 #   - VMware Operator for ArgoCD 1.2.0+ must be installed
 #   - argocd-k8s-sa ServiceAccount must exist in the namespace
-#   - You must be in the vSphere Namespace (kim-prod-vlryx in this example)
+#   - You must be in the vSphere Namespace (kim-prod-x4tqc in this example)
 #
 # To apply this manifest:
 #   kubectl apply -f argocd-managedentity.yaml
@@ -21,7 +21,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: argocd-k8s-sa-role
-  namespace: kim-prod-vlryx
+  namespace: kim-prod-x4tqc
   labels:
     app: argocd
     component: cluster-registration
@@ -45,7 +45,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: argocd-k8s-sa-rolebinding
-  namespace: kim-prod-vlryx
+  namespace: kim-prod-x4tqc
   labels:
     app: argocd
     component: cluster-registration
@@ -59,7 +59,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: argocd-k8s-sa
-    namespace: kim-prod-vlryx
+    namespace: kim-prod-x4tqc
 
 ---
 # ManagedEntity CRD - Registers the VKS cluster with ArgoCD
@@ -68,7 +68,7 @@ apiVersion: argocd-service.vsphere.vmware.com/v1alpha1
 kind: ManagedEntity
 metadata:
   name: infra-vks-01-managed
-  namespace: kim-prod-vlryx
+  namespace: kim-prod-x4tqc
   labels:
     cluster-name: infra-vks-01
     app: argocd
@@ -81,7 +81,7 @@ spec:
     apiGroup: cluster.x-k8s.io           # API group for Cluster API (VKS uses this)
     kind: Cluster                         # Resource kind
     name: infra-vks-01                    # Name of the VKS cluster
-    namespace: kim-prod-vlryx             # vSphere namespace where cluster resides
+    namespace: kim-prod-x4tqc             # vSphere namespace where cluster resides
   
   # Display name for the cluster in ArgoCD
   clusterName: infra-vks-01

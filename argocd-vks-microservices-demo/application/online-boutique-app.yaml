@@ -2,7 +2,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: infra-vks-01-online-boutique
-  namespace: kim-prod-vlryx
+  namespace: kim-prod-x4tqc
   annotations:
     argocd.argoproj.io/sync-wave: "20"
 spec:
